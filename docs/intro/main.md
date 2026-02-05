@@ -6,7 +6,7 @@ sidebar_position: 1
 
 You use containers everyday, that could be your Kubernetes, ECS clusters, your docker compose files, your [lambda functions](https://docs.aws.amazon.com/lambda/latest/dg/images-create.html), your CI/CD pipelines, your local development environment! [devcontainers say 👋](https://code.visualstudio.com/docs/devcontainers/containers)
 
-Not so simple as `docker run -it ubuntu ` **and did I get complete ubuntu on my machine!?**
+Not so simple as `docker run -it ubuntu ` and did I get complete ubuntu on my machine!?
 
 
 ## What this guide is not
@@ -29,3 +29,10 @@ Not so simple as `docker run -it ubuntu ` **and did I get complete ubuntu on my 
 - But abstractions are only good until they break! 
 - When they break, you need to go the actual plumbing during a prod issue
 - We dont need to go down the rabbit hole and become a kerner developer! But knowing the internals is the pragmatic sweet spot where you understand whats happening and can fix it! [or spin up that new node :D]
+
+
+## What you need to know before reading this guide
+
+- You should be comfortable with linux command line. I will try to explain the linux concepts
+- You should know the basics of running docker containers
+

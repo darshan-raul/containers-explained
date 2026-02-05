@@ -85,7 +85,25 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Tutorial',
+          label: 'Start',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'namespacesSidebar',
+          position: 'left',
+          label: 'Silos',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'cgroupsSidebar',
+          position: 'left',
+          label: 'Fences',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'overlaySidebar',
+          position: 'left',
+          label: 'Cargo',
         },
         {
           href: 'https://github.com/facebook/docusaurus',
