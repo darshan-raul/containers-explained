@@ -21,10 +21,11 @@ function HomepageHeader() {
         <Heading as="h1" className={styles.heroTitle}>
           {siteConfig.title}
         </Heading>
+        <p className="hero__subtitle">from docker run to creating your own container using bash</p>
         <div className={styles.buttons}>
           <Link
             className={clsx('button button--primary button--lg', styles.buttonStart)}
-            to="/docs/intro/main">
+            to="/docs/roadmap">
             Lets get started!
           </Link>
         </div>
@@ -41,7 +42,7 @@ export default function Home(): ReactNode {
       description="Containers Explained - A simple guide to containers.">
       <HomepageHeader />
       <main>
-        {/* Simplified layout - no features as per request */}
+        <HomepageFeatures />
       </main>
     </Layout>
   );

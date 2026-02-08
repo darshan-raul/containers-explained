@@ -1,54 +1,52 @@
-import type {ReactNode} from 'react';
+import type { ReactNode } from 'react';
 import clsx from 'clsx';
 import Heading from '@theme/Heading';
 import styles from './styles.module.css';
 
 type FeatureItem = {
   title: string;
-  Svg: React.ComponentType<React.ComponentProps<'svg'>>;
   description: ReactNode;
 };
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    title: 'What this guide is NOT',
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Not a hello world docker guide. Not a tutorial on port forwarding, networks, or creating smaller images using multi-stage builds.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    title: 'What this guide IS',
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Understand the mechanics behind the magic trick 🐇🎩. Debug production bugs, understand constraints, and learn about layers and bridges.
       </>
     ),
   },
   {
-    title: 'Powered by React',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    title: 'Why do I need to know this',
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        Abstractions are good until they break. When they do, you need to know the plumbing to fix it not just google error messages without context without becoming a kernel developer.
+      </>
+    ),
+  },
+  {
+    title: 'Prerequisites',
+    description: (
+      <>
+        You should be comfortable with the Linux command line, have root access to the machine and know the basics of running Docker containers.
       </>
     ),
   },
 ];
 
-function Feature({title, Svg, description}: FeatureItem) {
+function Feature({ title, description }: FeatureItem) {
   return (
-    <div className={clsx('col col--4')}>
-      <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
-      </div>
-      <div className="text--center padding-horiz--md">
+    <div className={clsx('col col--6')}>
+      <div className="text--center padding-horiz--md" style={{ border: '1px solid var(--ifm-color-emphasis-200)', borderRadius: '8px', padding: '20px', margin: '10px', height: '100%' }}>
         <Heading as="h3">{title}</Heading>
         <p>{description}</p>
       </div>

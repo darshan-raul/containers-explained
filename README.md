@@ -6,6 +6,8 @@
 
 A simple, comprehensive guide to understanding containers, namespaces, and how they work under the hood. This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
+Deep enough to understand the magic under the hood and not just google error messages. Concise enough that you dont get lost in the details and call yourself a kernel engineer.
+
 ## Features
 
 - **Tutorials**: Step-by-step guides to understanding container basics.
@@ -55,22 +57,19 @@ yarn build
 
 This static content can be served using any static hosting service.
 
-## Deployment
+# Roadmap
 
-### Using SSH
-
-```bash
-USE_SSH=true yarn deploy
-```
-
-### Not Using SSH
-
-```bash
-GIT_USER=<Your GitHub username> yarn deploy
-```
-
-If you are using GitHub Pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+- [ ] namespaces
+    - lsns
+    - nsenter
+    - unshare
+    - [ ] pid
+        - [] pid basics
+        - proc folder
+    - [ ] mnt
+    - [ ] net
+    - [ ] ipc
+    - [ ] uts
+    - [ ] user
+- [ ] cgroups
+- [ ] overlayfs

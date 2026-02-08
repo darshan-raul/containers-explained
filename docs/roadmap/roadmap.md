@@ -2,7 +2,7 @@
 # Roadmap 
 
 
-## 1. 🧱 [Silos](../../namespaces/process.md) - You see only what you need to see
+## 1. 🧱 making the [Silos](../namespaces/process.md) - You see only what you need to see
 
 > A container is a isolated process/s.
 
@@ -11,7 +11,7 @@
 - Deep dive into each namespace
 - Creating our own namespaces
 
-## 2. 🚧 [Fences](../../cgroups/cgroup.md) — You only get what you ask for
+## 2. 🚧 Putting the [Fences](../cgroups/cgroup.md) — You only get what you ask for
 
 > Containers have limited resources
 
@@ -20,7 +20,7 @@
 - creating cgroups and attaching processes to them
 - v1 vs v2
 
-## 3. 📦 Cargo — Images,Layers and overlayfs
+## 3. 📦 Manage the Cargo — Images,Layers and overlayfs
 
 > A container is a filesystem illusion.
 
@@ -31,7 +31,7 @@
 - what is copy-on-write
 
 
-## 4. 🔨 Cracking it open — Under the hood
+## 4. 🔨 What is under the hood? — containerd,runc and OCI
 
 > Revealing the magic trick
 
@@ -41,7 +41,7 @@
 - Trace a container creation from start to end
 
 
-## 5. 🧵 Giving it wings — How networking works
+## 5. 🧵 Wires — How networking works
 
 > Containers are isolated… but must communicate.
 

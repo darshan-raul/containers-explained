@@ -34,7 +34,10 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
-
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
   presets: [
     [
       'classic',
@@ -85,7 +88,7 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Start',
+          label: 'Roadmap',
         },
         {
           type: 'docSidebar',
@@ -104,6 +107,30 @@ const config: Config = {
           sidebarId: 'overlaySidebar',
           position: 'left',
           label: 'Cargo',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'underthehoodSidebar',
+          position: 'left',
+          label: 'Under the hood',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'wiresSidebar',
+          position: 'left',
+          label: 'Wires',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'gatesSidebar',
+          position: 'left',
+          label: 'Gates',
+        },
+        {
+          type: 'docSidebar',
+          sidebarId: 'buildSidebar',
+          position: 'left',
+          label: 'Build Your Own Container',
         },
         {
           href: 'https://github.com/facebook/docusaurus',

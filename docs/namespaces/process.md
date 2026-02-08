@@ -46,7 +46,7 @@ You will end up seeing something like:
 
 Wait, what? I thought I was running a container? Why is nginx running on my host machine?
 
-![alt text](image-1.png)
+![alt text](images/alwaysaprocess.png)
 
 The pid 1  `nginx: master process nginx -g daemon off` you see inside the container is actually running on your host machine as pid 116806 [in my case] but the container thinks its the main process for its own little world.
 
