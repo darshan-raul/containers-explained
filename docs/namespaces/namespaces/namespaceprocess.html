@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive PID Namespace Demo</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --box-bg: #1e293b;
+            --host-accent: #38bdf8;
+            --ns-accent: #fbbf24;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --success: #4ade80;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .controls {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        #nextBtn { background: var(--host-accent); color: #000; }
+        #nextBtn:hover { background: #7dd3fc; }
+        #nextBtn:disabled { background: #334155; color: #94a3b8; cursor: not-allowed; }
+
+        #resetBtn { background: transparent; border: 1px solid #334155; color: var(--text-dim); }
+        #resetBtn:hover { border-color: white; color: white; }
+
+        .container {
+            display: flex;
+            gap: 40px;
+        }
+
+        .box {
+            width: 320px;
+            height: 400px;
+            background: var(--box-bg);
+            border-radius: 12px;
+            border: 2px solid #334155;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .box-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .process-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .process {
+            background: #0f172a;
+            padding: 10px 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            border-left: 4px solid transparent;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .host-proc { border-left-color: var(--host-accent); }
+        .ns-proc { border-left-color: var(--ns-accent); }
+
+        .pid { font-family: monospace; color: var(--text-dim); }
+        
+        .status-area {
+            margin-top: 2rem;
+            text-align: center;
+            min-height: 50px;
+        }
+
+        #status-text { color: var(--ns-accent); font-size: 1.1rem; }
+        .empty-hint { color: #334155; text-align: center; margin-top: 100px; }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button id="nextBtn" onclick="nextStep()">Next Step</button>
+        <button id="resetBtn" onclick="resetSim()">Reset</button>
+        <span id="step-counter" style="color: var(--text-dim); margin-left: 10px;">Step 0/2</span>
+    </div>
+
+    <div class="container">
+        <div class="box">
+            <div class="box-title">Host (Global) <span class="pid">PID</span></div>
+            <div class="process-list" id="host-list">
+                </div>
+        </div>
+
+        <div class="box">
+            <div class="box-title">Namespace <span class="pid">PID</span></div>
+            <div class="process-list" id="ns-list">
+                </div>
+            <div id="ns-empty" class="empty-hint">Namespace Empty</div>
+        </div>
+    </div>
+
+    <div class="status-area">
+        <div id="status-text">Click "Next Step" to begin.</div>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        const hostList = document.getElementById('host-list');
+        const nsList = document.getElementById('ns-list');
+        const nsEmpty = document.getElementById('ns-empty');
+        const statusText = document.getElementById('status-text');
+        const nextBtn = document.getElementById('nextBtn');
+        const stepCounter = document.getElementById('step-counter');
+
+        const initialProcs = [
+            { name: 'systemd', pid: '1' },
+            { name: 'nginx', pid: '442' },
+            { name: 'sshd', pid: '510' }
+        ];
+
+        function addProcess(parent, name, pid, type) {
+            const div = document.createElement('div');
+            div.className = `process ${type}`;
+            div.innerHTML = `<span>${name}</span><span class="pid">${pid}</span>`;
+            parent.appendChild(div);
+        }
+
+        function resetSim() {
+            currentStep = 0;
+            hostList.innerHTML = '';
+            nsList.innerHTML = '';
+            nsEmpty.style.display = 'block';
+            statusText.innerText = 'Simulation reset. Click Next to start.';
+            statusText.style.color = 'var(--ns-accent)';
+            nextBtn.disabled = false;
+            stepCounter.innerText = `Step 0/2`;
+            
+            // Re-add initial host processes
+            initialProcs.forEach(p => addProcess(hostList, p.name, p.pid, 'host-proc'));
+        }
+
+        function nextStep() {
+            currentStep++;
+            stepCounter.innerText = `Step ${currentStep}/2`;
+
+            if (currentStep === 1) {
+                // Step 1: Normal process in host
+                statusText.innerText = "Launched 'python-app' in the host. It gets a standard high PID (852).";
+                addProcess(hostList, 'python-app', '852', 'host-proc');
+            } 
+            else if (currentStep === 2) {
+                // Step 2: Namespace process
+                nsEmpty.style.display = 'none';
+                statusText.style.color = 'var(--success)';
+                statusText.innerText = "Launched 'redis' in a PID Namespace. It thinks it is PID 1, but the Host sees it as PID 1024.";
+                
+                // Add to Host view
+                addProcess(hostList, 'redis (container)', '1024', 'ns-proc');
+                // Add to Namespace view
+                addProcess(nsList, 'redis-server', '1', 'ns-proc');
+                
+                nextBtn.disabled = true;
+            }
+        }
+
+        // Initialize on load
+        resetSim();
+    </script>
+</body>
+</html>

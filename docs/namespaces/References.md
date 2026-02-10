@@ -4,6 +4,7 @@ sidebar_position: 20
 
 # References
 
+- https://en.wikipedia.org/wiki/Linux_namespaces
 - [Namespaces](https://man7.org/linux/man-pages/man7/namespaces.7.html)
 - https://blog.quarkslab.com/digging-into-linux-namespaces-part-1.html
 - https://www.redhat.com/en/blog/uts-namespace

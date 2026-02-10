@@ -4,6 +4,195 @@ sidebar_position: 1
 
 # Images
 
+Nice catch — and you’re absolutely right to call that out 👍
+This is one of those **“Docker storage paths depend on how Docker was installed”** gotchas.
+
+Let’s fix it **precisely**, using *current Docker Engine behavior*.
+
+---
+
+## Why `/var/lib/docker/containerd` does NOT exist on your system
+
+Modern Docker can run in **two modes**:
+
+### 🔹 Mode A — *Docker-managed containerd* (older / some distros)
+
+```
+/var/lib/docker/containerd/...
+```
+
+### 🔹 Mode B — *System containerd (MOST COMMON TODAY)* ✅
+
+```
+/var/lib/containerd/...
+```
+
+👉 On most modern installs (Docker 24/25 on Ubuntu, RHEL, Rocky, etc.),
+**containerd is a separate system service**, so Docker does **not** store blobs under `/var/lib/docker/containerd`.
+
+That’s why the directory is missing — nothing is broken.
+
+---
+
+## The REAL place your image layers live (on your system)
+
+Your nginx layers are here 👇
+
+```bash
+/var/lib/containerd/io.containerd.content.v1.content/blobs/sha256/
+```
+
+This is **containerd’s global content store**.
+
+---
+
+## 🔍 Step 1: confirm what Docker is using
+
+Run:
+
+```bash
+docker info | grep -i containerd
+```
+
+You’ll see something like:
+
+```
+containerd version: 1.7.x
+containerd runc version: runc 1.1.x
+```
+
+Now check containerd directly:
+
+```bash
+containerd config dump | grep root
+```
+
+Typical output:
+
+```
+root = "/var/lib/containerd"
+```
+
+✅ That’s the smoking gun.
+
+---
+
+## 🔍 Step 2: find your nginx layer blob (for real this time)
+
+Take one layer digest from your inspect output:
+
+```
+sha256:989e799e634906e94dc9a5ee2ee26fc92ad260522990f26e707861a5f52bf64e
+```
+
+Now:
+
+```bash
+ls -lh /var/lib/containerd/io.containerd.content.v1.content/blobs/sha256/989e799e634906e94dc9a5ee2ee26fc92ad260522990f26e707861a5f52bf64e
+```
+
+You should see a **regular file**, not a directory.
+
+That file **is the layer**.
+
+---
+
+## 🔍 Step 3: prove it’s a filesystem layer
+
+```bash
+cp /var/lib/containerd/io.containerd.content.v1.content/blobs/sha256/989e799e63* /tmp/layer.tar
+file /tmp/layer.tar
+```
+
+Expected:
+
+```
+gzip compressed data
+```
+
+Extract it:
+
+```bash
+mkdir /tmp/layer
+tar -xzf /tmp/layer.tar -C /tmp/layer
+ls /tmp/layer
+```
+
+🎯 Those are the actual files added by that image layer.
+
+---
+
+## So where is `/var/lib/docker/overlay2` still used?
+
+OverlayFS is **Docker’s snapshotter**, not image storage.
+
+```
+/var/lib/docker/
+└── overlay2/
+    ├── <container-id>/
+    │   ├── diff/
+    │   ├── lower
+    │   ├── merged/
+    │   └── work/
+```
+
+⚠️ These directories appear **ONLY after**:
+
+```bash
+docker create
+docker run
+```
+
+They **do not exist** for images alone.
+
+---
+
+## 🔥 Prove it live (recommended lab)
+
+```bash
+docker create --name test-nginx nginx:alpine
+```
+
+Now:
+
+```bash
+ls /var/lib/docker/overlay2
+```
+
+Then map it:
+
+```bash
+docker inspect test-nginx | jq '.[0].GraphDriver.Data'
+```
+
+---
+
+## One sentence that locks it in
+
+> **Image layers live as compressed blobs in `/var/lib/containerd`.
+> OverlayFS directories live in `/var/lib/docker/overlay2` and only exist for containers.**
+
+---
+
+## Extra sanity checks (advanced)
+
+List containerd content:
+
+```bash
+ctr -n moby content ls | head
+```
+
+List snapshots:
+
+```bash
+ctr -n moby snapshots ls
+```
+
+You’re now looking at Docker **from the same angle Docker engineers do** 😄
+If you want, next we can **trace one exact layer from `docker inspect` → blob → snapshot → merged mount**, end-to-end.
+
+---
+
 When using Docker with the **containerd image store**, "seeing" the internal details is distinct from the classic Docker method because the file structure is more opaque (random numbered directories instead of hashes).
 
 Here is how you can inspect the **nginx:alpine** image internals in this setup.
