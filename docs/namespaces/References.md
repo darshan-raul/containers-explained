@@ -15,3 +15,5 @@ sidebar_position: 20
 
 - https://www.tecmint.com/exploring-proc-file-system-in-linux/
 - https://rarchk.github.io/systems/2016/07/07/internals-of-proc-in-linux
+- https://pkg.go.dev/github.com/opencontainers/runc/libcontainer/nsenter
+- https://ryotaro.dev/en/posts/runc/

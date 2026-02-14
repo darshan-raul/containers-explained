@@ -1,4 +1,11 @@
-UTS Namespace + /proc/sys/kernel/hostname
+---
+sidebar_position: 7
+---
+
+# UTS Namespace
+
+
+ + /proc/sys/kernel/hostname
 
 Inside a container:
 

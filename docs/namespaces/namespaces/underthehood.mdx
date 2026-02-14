@@ -1,7 +1,9 @@
 ---
 sidebar_position: 3
 ---
-import UnshareDemo from '@site/src/components/UnshareDemo';
+
+import NamespaceVisualizer from '@site/src/components/NamespaceVisualizer';
+
 
 
 # Under the hood
@@ -136,15 +138,33 @@ mindmap
 <br />
 <br />
 
+### Namespaces are shared by default
+
 run the following command:
 
 ```bash
-ls -l /proc/$$/
+ls /proc/$$/
 ```
 
-These are the files for the current process, zsh in my case.
+These are the files for the current process [$$], zsh in my case.
 
+![alt text](../images/procls_mac.png)
 
+You can check the status of the process using `cat /proc/$$/status | head`
+
+![alt text](../images/procstatus_mac.png)
+
+You can also look at the namespaces of the process using `ls -la /proc/$$/ns`, The numbers in brackets are unique identifiers for each namespace.
+
+![alt text](../images/procns_mac.png)
+
+Now lets check the namespaces of the systemd process [pid 1] using `sudo ls -la /proc/1/ns` [**dont miss the sudo**]
+
+![alt text](../images/systemdns_mac.png)
+
+The namespaces of the systemd process are the same as the current process! 
+
+Meaning all namespaces are **shared**. *Until we unshare them later on* 😉
 
 ### Why is `/proc` important in containers?
 
@@ -199,56 +219,253 @@ A process
 And `/proc` is the lens through which that process experiences its isolated environment.
 
 
-## whats unshare
+## Unshare: to move process to new namespaces
+
+
+[In the previous section](#namespaces-are-shared-by-default) we saw how to look at the namespaces of a process using `ls -la /proc/$$/ns` and **we saw that all namespaces are shared** right from the init process to the current process. 
+
+🤔 But we know that we need to create new namespaces for our processes to be isolated. 
+
+👉👉 Enter `unshare`. 
+
+The unshare command runs a program (by default, your shell) with some namespaces "unshared" from its parent. 
+
+**Basic Syntax:** 
+
+```bash
+unshare [options] [program [arguments]]
+```
+
+**Important Options**
+
+| Option | Description |
+|--------|-------------|
+| `--mount`, `-m` | Unshare the mount namespace |
+| `--pid`, `-p` | Unshare the PID namespace |
+| `--net`, `-n` | Unshare the network namespace |
+| `--uts`, `-u` | Unshare the UTS namespace |
+| `--user`, `-U` | Unshare the user namespace |
+| `--ipc`, `-i` | Unshare the IPC namespace |
+| `--cgroup`, `-C` | Unshare the cgroup namespace |
+| `--time`, `-T` | Unshare the time namespace |
+| `--fork`, `-f` | Fork the child process (needed for PID namespace to work correctly) |
+| `--mount-proc` | Mount a new procfs at `/proc` after creating the PID namespace (implies `--fork`) |
+| `--propagation` | Set mount propagation (shared, slave, private, unbindable) for the new mount namespace |
+| `--map-root-user` | Map the current (unprivileged) user to root inside the user namespace |
+
+
+### Examples
+
+💡 We already had a [glimpse](../namespaces/#namespace-glimpse) of how unshare works 💡, that was when we created a new uts namespace.
+
+Lets look at a few more examples to understand how unshare works.
+
+:::note Not yet
+
+some namespaces like process,user need some more context before we can cover them at this point, they are covered in depth in their specific sections
+
+:::
+
+:::tip
+
+Run all of these with sudo or as root. Namespace creation requires elevated permissions.
+
+:::
+
+**1. Network Namespace**
+
+
+1. Create a new network namespace and run bash:
+   ```bash
+   sudo unshare --net bash
+   ```
+
+2. Inside, check network interfaces:
+
+   ```bash
+   ip a
+   ```
+
+   You’ll see only `lo` (loopback), and it’s probably down. 
+   
+   ![alt text](../images/netnsipa_mac.png)
+   
+   
+   Bring it up:
+   ```bash
+   ip link set lo up
+   ping 127.0.0.1   
+   ```
+   
+   ![alt text](../images/netnsloup_mac.png)
+
+   But no other interfaces (eth0, wlan0) are present – the namespace is completely isolated from the host’s network.
+
+   How will we communicate with the host? to the internet!? We will cover that in the [network namespace section](./network_namespaces.md)
+
+
+How do we confirm we are in a new namespace?
+
+- **In your unshared shell**
+    - run `echo $$` to get the pid of your bash process
+- **In a different terminal shell [hostmachine]**:
+    - check the network namespace of it using `sudo ls -la /proc/<pid>/ns | grep net`
+    - check the network namespace of the host using `sudo ls -la /proc/1/ns | grep net`. You will see that the network namespace of the unshared shell is different from the network namespace of the host!
+
+![alt text](../images/netnsdiff_mac.png)
+
+- Exit the unshared shell using `exit`
+
+**2. Mount namespace**
+
+Lets try unsharing the mount namespace.
+
+Run the following:
+
+```bash
+sudo unshare --mount bash
+```
+
+Inside this shell:
+
+```bash
+ls -l /proc/self/ns/mnt
+```
+
+Compare with your host mnt ns. It will be a different number.
+
+![alt text](image.png)
+
+Step 2: Mount something private
+
+- on the unshared shell:
+
+    ```bash
+    mkdir /tmp/mytest
+    mount -t tmpfs tmpfs /tmp/mytest
+    mount | grep mytest
+    ```
+
+You’ll see it mounted.
+
+Open another terminal on host:
+
+```bash
+ mount | grep mytest
+```
+
+You will not see it! The mount is completely isolated to your new mount namespace.
+
+:::info Ever wondered?
+How docker containers have their own root filesystem and processes? Answer: mount namespaces! with help from pivot_root and procfs! 
+
+We will explore this in depth in the next sections
+:::
 
 
 
-## Looking into the nsenter
 
-Entering Existing Namespaces with nsenter
+## Nsenter: enter existing namespaces
 
-Purpose: join namespaces of another process.
+A container or pod is facing a problem. You use `docker exec`,`kubectl exec` to enter the container and debug it. You are essentianlly going into the namespace of the container and debugging it!
 
-Syntax:
+Enter nsenter [pun intended] :smile: 
+
+
+[Container runtimes use similar functionality](https://pkg.go.dev/github.com/opencontainers/runc/libcontainer/nsenter)
+
+
+**Syntax:**
 
 ```bash
 nsenter --target <pid> [options]
 ```
 
-Step 1: Find a process
+### Example
 
-From host:
+Lets create a new process with unshared mount and uts namespaces and make some changes. 
 
-ps aux | grep bash
+```
+sudo unshare --mount --uts bash
 
+>> inside the unshared shell
+mkdir /tmp/nsenter-test
+mount -t tmpfs tmpfs /tmp/nsenter-test
+hostname nsenter-test
 
-Find PID of your unshare shell.
-
-Step 2: Enter its mount namespace
-
-```bash
-sudo nsenter --target <PID> --mount bash
+echo $$ // note the pid
 ```
 
-You are now inside that process’s mount namespace.
+![alt text](image-1.png)
 
-Step 3: Enter PID namespace
+Let's say we found the PID to be `12345`.
 
-```bash
-sudo nsenter --target <PID> --pid --mount-proc bash
-```
+**in a different terminal (host machine)**
 
-How it works
-
-It reads:
+Now, let's run `nsenter` to join its mount namespace.
 
 ```bash
-/proc/<PID>/ns/*
+sudo nsenter --target <pid> --mount --uts bash
 ```
 
-And attaches your process to those namespaces.
+Now you are inside the same namespaces as the target process!
 
-<UnshareDemo />
+**Lets verify** 🧐
 
-## clone command
+- If you run `hostname`, you will see the unshared shell's custom hostname.
+- If you run `mount | grep nsenter-test`, you will see the mount we created inside the unshared shell.
+
+![alt text](image-2.png)
+
+
+
+:::imp
+Use `nsenter --target <pid> --all` to enter **all** namespaces of the target process comfortably.
+:::
+
+
+## Clone: create new processes into namespaces
+
+:::note
+
+There is no bash shell command for clone its a kernel system call, but the concept is important to understand non the less.
+
+:::
+
+We have seen `unshare` which helps us "detach" the current process (or a new child) from the current namespaces.
+
+But how do tools like **Docker** or **Container Runtimes** create containers?
+
+They use the **`clone()`** system call.
+
+While `fork()` creates a copy of the parent process sharing the **same** namespaces, `clone()` allows creating a new child process **directly** into new namespaces.
+
+*   `fork()` = Child inherits parent's namespaces.
+*   `clone(CLONE_NEWPID | CLONE_NEWNS)` = Child starts in **NEW** namespaces.
+
+This is the most efficient way to spawn containers. The parent (Container Engine) remains in the host namespace, supervising, while the child (The Container) starts its life in a fresh, isolated world.
+
+:::info
+The `unshare` command we used earlier actually uses `unshare()` system call, but when you pass `--fork`, it behaves very similarly to `clone()` by creating a new child in the new namespaces.
+:::
+
+
+
+## Visualizing the tools
+
+
+### Key Difference: unshare() vs clone()
+
+While both can result in a process running in a new namespace, they approach it differently:
+
+| Feature | `unshare()` | `clone()` |
+| :--- | :--- | :--- |
+| **Action** | **Modifies** the *current* process (mostly). | **Creates** a *new* child process. |
+| **Namespace Creation** | Existing process unshares its namespaces from parent. | New child is born directly into new namespaces. |
+| **Primary Use Case** | Shell commands, entering namespaces, manual setups. | Container Runtimes (Docker, runc) spawning containers. |
+| **PID Namespace Quirk** | Requires `fork()` afterwards to truly be PID 1 in new NS. | Can become PID 1 immediately if `CLONE_NEWPID` is used. |
+
+
+
+<NamespaceVisualizer /> 
 

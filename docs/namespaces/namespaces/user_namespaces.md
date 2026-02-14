@@ -1,9 +1,57 @@
 ---
-sidebar_position: 4
+sidebar_position: 8
 ---
 # User Namespaces
 
 > Run as "root", not root
+
+### 5.4 User Namespace Details
+
+- **ID mapping**: When you use `--map-root-user`, it sets up a mapping that maps your UID to 0 inside the namespace. You can also create custom mappings with `--map-user` and `--map-group` (advanced).
+- **Capabilities**: Inside a user namespace, a process can have capabilities even if it’s unprivileged outside. However, these capabilities are only effective for resources tied to that namespace (e.g., mounting in a mount namespace that is also owned by that user namespace).
+- **Interaction with other namespaces**: A user namespace is often the “owner” of other namespaces. For instance, if you create a new mount namespace while also in a new user namespace, the mount namespace is owned by that user namespace. That’s why unprivileged users can create mount namespaces (with `--user --mount`).
+
+### 3.5 User Namespace
+
+**Goal**: Demonstrate that an unprivileged user can map itself to root inside a user namespace and gain capabilities.
+
+User namespaces allow a non‑root user to have root privileges *inside* the namespace, while remaining unprivileged outside. This is key for safe container runtimes.
+
+1. As a normal (non‑root) user, run:
+   ```bash
+   unshare --user --map-root-user bash
+   ```
+   - `--user` creates a new user namespace.
+   - `--map-root-user` maps the current user to root inside the namespace (i.e., UID 0 inside corresponds to your UID outside).
+
+2. Inside, check your user ID:
+   ```bash
+   id
+   ```
+   Output: `uid=0(root) gid=0(root) groups=0(root)`. You are root! Check capabilities:
+   ```bash
+   cat /proc/$$/status | grep CapEff
+   ```
+   The capability set will include many privileged capabilities (e.g., `000001ffffffffff`). You have full power inside the namespace.
+
+3. Try to do something privileged, like mounting a tmpfs:
+   ```bash
+   mkdir /tmp/mymount
+   mount -t tmpfs tmpfs /tmp/mymount
+   ```
+   This works because inside the user namespace you have `CAP_SYS_ADMIN`. However, note that this mount is also isolated in the mount namespace? Wait – we didn’t unshare mount namespace. Actually, by default, user namespaces alone don’t isolate mounts; you need `--mount` as well. But the mount operation succeeds because you have the capability. It will affect the mount namespace you are in (which is shared with the host if you didn’t unshare mount). So be careful: if you mount something, it will be visible on the host because you’re still in the host’s mount namespace. Let’s check:
+
+   In the same shell, run `mount | grep tmpfs` – you’ll see the tmpfs mount. From the host, you’ll also see it! That’s because we didn’t isolate the mount namespace.
+
+   To get proper isolation, combine user and mount namespaces:
+   ```bash
+   unshare --user --map-root-user --mount bash
+   ```
+   Now mount a tmpfs; it won’t appear on the host. This is exactly how unprivileged containers work.
+
+4. **Check namespace IDs**: In the user namespace, run `readlink /proc/self/ns/user` – it will be different from the host’s user namespace.
+
+**Note**: Some distributions restrict unprivileged user namespaces by default (e.g., Debian with kernel.unprivileged_userns_clone=0). On Ubuntu, it’s usually enabled. If you get a permission error, try with `sudo` for the examples, or check sysctl settings.
 
 User Namespace (Very Important)
 
