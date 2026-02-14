@@ -418,9 +418,10 @@ Now you are inside the same namespaces as the target process!
 ![alt text](image-2.png)
 
 
+:::info imp
 
-:::imp
 Use `nsenter --target <pid> --all` to enter **all** namespaces of the target process comfortably.
+
 :::
 
 
@@ -448,8 +449,6 @@ This is the most efficient way to spawn containers. The parent (Container Engine
 :::info
 The `unshare` command we used earlier actually uses `unshare()` system call, but when you pass `--fork`, it behaves very similarly to `clone()` by creating a new child in the new namespaces.
 :::
-
-
 
 ## Visualizing the tools
 

@@ -4,6 +4,24 @@ sidebar_position: 1
 
 # Images
 
+
+## IV. Container Filesystem View
+
+### A. Layered Filesystems (OverlayFS)
+
+In the previous example, we used a plain directory. Real containers use **OverlayFS**. This allows multiple layers (read-only image layers + a writable container layer) to be merged into a single view.
+
+Before the `pivot_root` step occurs, a container runtime performs:
+
+1.  **Mount Layers:** It mounts the OverlayFS.
+    *   `lowerdir`: The read-only image layers.
+    *   `upperdir`: The writable container layer.
+    *   `workdir`: Required by OverlayFS.
+2.  **Result:** A merged directory appears at a mount point (e.g., `/var/lib/containerd/.../merged`).
+3.  **Pivot:** The runtime `pivot_root`s into this merged directory.
+
+This is why containers feel lightweight; they share the read-only image layers on disk but appear to have a full independent filesystem.
+
 Nice catch — and you’re absolutely right to call that out 👍
 This is one of those **“Docker storage paths depend on how Docker was installed”** gotchas.
 
