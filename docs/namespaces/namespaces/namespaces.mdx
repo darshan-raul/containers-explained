@@ -68,6 +68,11 @@ As we saw in the previous section, the container is just a process running on th
 
 <PidNamespaceDemo />
 
+In the visualization above, 
+- the new myapp process has an actual pid of 847 on the hostmachine 
+- but inside the new pid namespace it has pid 1 because its the only process in it yet! 
+- any child processes created from this process will also end up in this new pid namespace 
+- and will be assigned pids starting from 2,3 and so on with corresponding actual pids in the host machine. 
 
 :::tip
 
@@ -97,7 +102,7 @@ Here is the map:
 
 We will check the major namespaces in the next sections. Before that you need to know how to interact with namespaces or check resources created by them. 
 
-We will cover that in the [next section](./underthehood.md).
+We will cover that in the [next section](./underthehood.mdx).
 
 ## They are not just for containers
 

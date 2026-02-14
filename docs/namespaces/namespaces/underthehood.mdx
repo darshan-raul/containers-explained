@@ -8,6 +8,11 @@ import UnshareDemo from '@site/src/components/UnshareDemo';
 
 We will try to understand how to look at and enter namespaces using the tools available to us. We will also try to understand the /proc filesystem which is a major concept to be aware about.
 
+:::tip
+
+You can run the next steps as the root user if you face any permission issues.
+
+:::
 
 ## Checking the namespaces
 
@@ -37,21 +42,211 @@ You can also see the namespaces for a certain process using `lsns -p <pid>`
 
 ## The /proc Filesystem
 
-Lets check your current shell process, run `echo $$` in your shell, it will give you a process id.
 
-You can confirm the same using `ps -aux | grep <pid>`.
+To get the picture, there is no better way than the next command:
 
-![alt text](../images/dollarpid.png)
+```bash
+watch -n0.5 cat /proc/uptime
+```
 
-This is a "pseudo-filesystem." It doesn't exist on your hard drive; it exists in the RAM.
+![alt text](../images/watchuptime.gif)
 
-    Navigate to /proc/[pid]/ns/. This is where the kernel actually exposes the namespaces associated with a specific process. If you can't navigate /proc, namespaces will feel like "black box" magic rather than visible system files.
+Do you see the file `/proc/uptime` updating realtime?! Is this the file the `uptime` command refers?
+
+- `/proc` is a virtual filesystem exposed by the Linux kernel.
+- While it looks like a normal directory filled with files, it isnt. 
+    - Files are not on disk
+    - Contents are generated on the fly
+    - **Reading a file = asking the kernel a question**
+    - **You can also update files** in /sys folder and update kernel parameters. eg `sudo sysctl -w net.ipv4.ip_forward=1` is actually updating `/proc/sys/net/ipv4/ip_forward` file. 
+
+:::info
+The `/proc` filesystem does not exist on your hard drive. It is created in memory by the kernel on the fly.
+:::
+
+Think of it as a window into the kernel. It exposes internal kernel data (information about processes, memory, hardware, and configurations) as if they were standard text files.
+
+- It is dynamic: If you read a file in `/proc`, the kernel generates the content at that exact moment.
+- It is ephemeral: If you shut down your computer, everything in `/proc` vanishes because it lives in RAM.
+- "Everything is a file": This adheres to the Unix philosophy. You can use standard tools like cat, less, and grep to read kernel data
+
+
+:::info
+
+/proc is actually mounted on your host machine. Run `mount | grep proc` to see it. This understanding will be important later.
+
+:::
+
+
+**So what kind of data can I get from `/proc`?**
+
+Run `ls /proc` on your machine.
+
+:::tip
+You can zoon images by clicking them
+:::
+
+![alt text](../images/proc_mac.png)
+
+
+The left side of folders are specific for each process, yup each process! and the ones on the right are the files for the global data like uptime,meminfo,cpuinfo etc. 
+
+
+Heres a brief map to know the main files/folders in the `/proc` folder, if you are interested to look deeper, I recommend running `apropos proc_` command and having a look at man pages for anything you are interested inside proc.
+
+<br />
+<br />
+
+
+```mermaid
+mindmap
+  root((Kernel info from proc))
+    Process Management
+      /proc/[pid]
+        status
+        cmdline
+        fd
+        maps
+    Memory Management
+      /proc/meminfo
+      /proc/vmstat
+      /proc/buddyinfo
+    Hardware & Architecture
+      /proc/cpuinfo
+      /proc/interrupts
+      /proc/devices
+      /proc/iomem
+    Networking Stack
+      /proc/net
+        arp
+        tcp
+        dev
+    Kernel Parameters
+      /proc/sys
+        net/ipv4/ip_forward
+        kernel/hostname
+        vm/swappiness
+    General System Info
+      /proc/version
+      /proc/uptime
+      /proc/loadavg
+```
+
+<br />
+<br />
+<br />
+
+run the following command:
+
+```bash
+ls -l /proc/$$/
+```
+
+These are the files for the current process, zsh in my case.
+
+
+
+### Why is `/proc` important in containers?
+
+Namespaces and cgroups (covered in the next phase) are the core technologies that enable containers.
+
+But there is an important question:
+
+> If namespaces create isolation, how does a process *see* that isolated world?
+
+The answer is: **`/proc`**.
+
+We know by now that:
+
+> `/proc` is the window through which a process sees the system.
+
+When a container starts:
+
+* A new set of namespaces is created
+* A new mount namespace is prepared (we will see this in detail in the mount namespace section)
+* `/proc` is mounted inside that container’s filesystem
+
+**Because `/proc` is namespace-aware**, it only shows:
+
+* The processes visible inside that container
+* The system identity assigned to that container
+
+So even though the container runs on the same host, its `/proc` presents a filtered and isolated view.
+
+**That filtered view is what creates the container illusion.**
+
+> Namespaces create isolation, but `/proc` makes that isolation visible.
+
+Container runtimes themselves inspect:
+
+```
+/proc/<pid>/ns
+/proc/<pid>/cgroup
+/proc/<pid>/mountinfo
+```
+
+Without `/proc`, container tools would have no way to understand or manage isolation boundaries.Containers would be effectively blind.
+
+A container is simply:
+
+```
+A process
+  + Namespaces
+  + Cgroups
+  + A filesystem
+```
+
+And `/proc` is the lens through which that process experiences its isolated environment.
+
+
+## whats unshare
+
 
 
 ## Looking into the nsenter
 
-## whats unshare
+Entering Existing Namespaces with nsenter
 
+Purpose: join namespaces of another process.
+
+Syntax:
+
+```bash
+nsenter --target <pid> [options]
+```
+
+Step 1: Find a process
+
+From host:
+
+ps aux | grep bash
+
+
+Find PID of your unshare shell.
+
+Step 2: Enter its mount namespace
+
+```bash
+sudo nsenter --target <PID> --mount bash
+```
+
+You are now inside that process’s mount namespace.
+
+Step 3: Enter PID namespace
+
+```bash
+sudo nsenter --target <PID> --pid --mount-proc bash
+```
+
+How it works
+
+It reads:
+
+```bash
+/proc/<PID>/ns/*
+```
+
+And attaches your process to those namespaces.
 
 <UnshareDemo />
 

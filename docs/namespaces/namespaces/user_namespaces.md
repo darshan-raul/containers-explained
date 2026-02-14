@@ -5,6 +5,70 @@ sidebar_position: 4
 
 > Run as "root", not root
 
+User Namespace (Very Important)
+
+This allows unprivileged users to gain root inside the namespace.
+
+Step 1: Create user namespace as non-root
+unshare --user --map-root-user bash
+
+
+Now check:
+
+whoami
+
+
+Output:
+
+root
+
+
+But you are not real root on host.
+
+Check capabilities:
+
+id
+
+
+UID will be 0 inside namespace.
+
+What --map-root-user does
+
+It maps:
+
+your_host_uid → 0 inside namespace
+
+
+Check mapping:
+
+cat /proc/self/uid_map
+
+
+Example output:
+
+0 1000 1
+
+
+Means:
+
+container UID 0 → host UID 1000
+
+
+This is how rootless containers work.
+
+
+6️⃣ User Namespace + /proc/self/uid_map
+
+When user namespaces are enabled:
+
+/proc/self/uid_map
+/proc/self/gid_map
+
+
+These show how container UID 0 maps to host UID 100000+.
+
+This is rootless containers magic.
+
 5. User IDs (UID) and Group IDs (GID)
 
 Linux manages permissions based on IDs.

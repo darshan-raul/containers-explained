@@ -12,3 +12,6 @@ sidebar_position: 20
 - https://www.redhat.com/en/blog/mount-namespaces
 - https://www.redhat.com/en/blog/pid-namespace
 - https://www.redhat.com/en/blog/net-namespaces
+
+- https://www.tecmint.com/exploring-proc-file-system-in-linux/
+- https://rarchk.github.io/systems/2016/07/07/internals-of-proc-in-linux

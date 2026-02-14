@@ -17,11 +17,21 @@ function HomepageHeader() {
           src="/img/logo.png"
           alt="Containers Logo"
           className={styles.heroLogo}
+          style={{ width: '60%', height: '50%' }}
         />
         <Heading as="h1" className={styles.heroTitle}>
           {siteConfig.title}
         </Heading>
-        <p className="hero__subtitle">from docker run to creating your own container using bash</p>
+
+        <div className={styles.subtitleContainer}>
+          <div className={styles.subtitleBox}>
+            Understand container internals simply
+          </div>
+          <div className={styles.arrow}>→</div>
+          <div className={styles.subtitleBox}>
+            Create your own using bash
+          </div>
+        </div>
         <div className={styles.buttons}>
           <Link
             className={clsx('button button--primary button--lg', styles.buttonStart)}
